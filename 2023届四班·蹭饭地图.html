@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/map/js/china.js"></script>
+    <style>
+        * {margin: 0;padding: 0;box-sizing: border-box;}
+        body {
+            background-color: #960405;
+            color: #AF8C4A;
+            font-family: "FangSong", "Microsoft YaHei", serif;
+            overflow-x: hidden;
+        }
+        .header {
+            text-align: center;
+            padding: 10px 6px;
+            border-bottom: 1px solid #DDBE7B;
+        }
+        .header h1 {
+            font-size: 18px;
+            color: #DDBE7B;
+            letter-spacing: 1px;
+        }
+        .header p {
+            margin-top: 3px;
+            color: #DDBE7B;
+            font-size:12px;
+        }
+        #chinaMap {
+            width: 100vw;
+            height: calc(100vh - 150px);
+        }
+        .tips {
+            text-align: center;
+            padding: 4px;
+            color: #AF8C4A;
+            font-size:18px;
+        }
+        .sidebar-wrap {
+            position: fixed;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            width: auto;
+            max-height: 130px;
+            display: flex;
+            flex-direction: row;
+            gap:6px;
+        }
+        @media (min-width:768px) {
+            .sidebar-wrap {
+                position: fixed;
+                top: 110px;
+                right: 12px;
+                left:auto;
+                width: 220px;
+                max-height: 70vh;
+                flex-direction: column;
+            }
+        }
+        .panel-box {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid #AF8C4A;
+            border-radius: 6px;
+            padding: 6px;
+            overflow-y: auto;
+        }
+        .panel-box h3 {
+            color:#AF8C4A;
+            font-size:14px;
+            margin-bottom:4px;
+            text-align:center;
+        }
+        .stat-item {
+            display:flex;
+            justify-content:space-between;
+            padding:2px 0;
+            border-bottom:1px solid #AF8C4A;
+            font-size:12px;
+            color:#AF8C4A;
+        }
+        .student-item {
+            padding:2px 3px;
+            margin:1px 0;
+            font-size:12px;
+            border-radius:3px;
+            cursor:pointer;
+            transition: background 0.2s;
+            color:#AF8C4A;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .student-item:hover {
+            background-color: #AF8C4A;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>2023届四班·全国蹭饭地图</h1>
+        <p></p >
+    </div>
+
+    <div id="chinaMap"></div>
+
+    <div class="sidebar-wrap">
+        <div class="panel-box">
+            <h3>各省人数</h3>
+            <div id="statList"></div>
+        </div>
+        <div class="panel-box">
+            <h3>同学列表</h3>
+            <div id="studentList"></div>
+        </div>
+    </div>
+
+    <div class="tips">班主任/英语 李婀娜<br>语文 兰威威 <br>语文 盛欣<br>数学 刘争</div>
+
+    <script>
+        const myChart = echarts.init(document.getElementById('chinaMap'));
+
+        const classmateList = [
+            {name:"曹业翔", province:"天津", school:"中国民航大学"},
+            {name:"董韦函", province:"天津", school:"天津医科大学"},
+            {name:"董子铭", province:"天津", school:"河北工业大学"},
+            {name:"高宇涵", province:"天津", school:"天津财经大学"},
+            {name:"黄卓昱", province:"天津", school:"中国民航大学"},
+            {name:"解清越", province:"天津", school:"天津商业大学"},
+            {name:"李浩暄", province:"天津", school:"天津中医药大学"},
+            {name:"李向明", province:"天津", school:"中国民航大学"},
+            {name:"李雨诺", province:"天津", school:"天津财经大学"},
+            {name:"沈思聪", province:"天津", school:"天津大学"},
+            {name:"孙晨铭", province:"天津", school:"天津财经大学"},
+            {name:"王梓萌", province:"天津", school:"天津中医药大学"},
+            {name:"邢虓雨", province:"天津", school:"天津工业大学"},
+            {name:"殷昕怡", province:"天津", school:"天津财经大学"},
+            {name:"于泽浩", province:"天津", school:"南开大学"},
+            {name:"张语涵", province:"天津", school:"天津工业大学"},
+
+            {name:"高悦喆", province:"北京", school:"中央民族大学"},
+            {name:"胡天一", province:"北京", school:"华北电力大学（北京校区）"},
+            {name:"李依琳", province:"北京", school:"北京工商大学"},
+            {name:"李自远", province:"北京", school:"中国政法大学"},
+            {name:"马鼎奇", province:"北京", school:"北京工业大学"},
+            {name:"乞祥", province:"北京", school:"中国地质大学（北京）"},
+            {name:"王沫涵", province:"北京", school:"北京科技大学"},
+
+            {name:"冯歆恬", province:"山东", school:"山东大学"},
+            {name:"张同奥", province:"山东", school:"山东大学"},
+
+            {name:"单泽然", province:"湖北", school:"华中农业大学"},
+            {name:"周乐知", province:"湖北", school:"中国地质大学（武汉）"},
+
+            {name:"付雨诺", province:"辽宁", school:"沈阳工业大学"},
+            {name:"郭梓翀", province:"云南", school:"昆明理工大学"},
+            {name:"李恩予", province:"吉林", school:"吉林大学"},
+
+            {name:"卢持方", province:"江苏", school:"南京信息工程大学"},
+            {name:"王婧旖", province:"江苏", school:"南京农业大学"},
+            {name:"张贺捷", province:"江苏", school:"西交利物浦大学"},
+
+            {name:"马鲲羽", province:"安徽", school:"安徽大学"},
+            {name:"谭雅菡", province:"上海", school:"上海戏剧学院"},
+            {name:"王雨桐", province:"浙江", school:"温州肯恩大学"},
+            {name:"张添庸", province:"河北", school:"中央司法警官学院"},
+            {name:"张玺", province:"陕西", school:"西北农林科技大学"}
+        ];
+
+        const provinceData = {};
+        const provinceCount = {};
+        classmateList.forEach(item => {
+            if (!provinceData[item.province]) provinceData[item.province] = [];
+            provinceData[item.province].push({name: item.name, school: item.school});
+            provinceCount[item.province] = (provinceCount[item.province] || 0) + 1;
+        });
+
+        // 三色分组定义
+        const greenGroup = ['天津','北京','江苏','陕西'];
+        const goldGroup = ['山东','湖北','辽宁'];
+        const orangeGroup = ['云南','吉林','安徽','上海','浙江','河北'];
+
+        const dataList = [];
+        Object.keys(provinceCount).forEach(province => {
+            let fillColor;
+            if (greenGroup.includes(province)) {
+                fillColor = '#71986C';
+            } else if (goldGroup.includes(province)) {
+                fillColor = '#DDBE7B';
+            } else {
+                fillColor = '#EB7249';
+            }
+            dataList.push({
+                name: province,
+                value: 1,
+                itemStyle: { color: fillColor }
+            });
+        });
+
+        function fullTooltip(params) {
+            const provinceName = params.name;
+            if (!provinceData[provinceName]) return `<span style="color:#AF8C4A">${provinceName}：暂无同学</span>`;
+
+            let html = `<strong style="color:#AF8C4A">【${provinceName}】全部院校及学生</strong><hr style="margin:3px 0;border:#AF8C4A">`;
+            provinceData[provinceName].forEach(info => {
+                html += `<span style="color:#AF8C4A;font-size:12px">▫️${info.school} — ${info.name}</span><br>`;
+            });
+            return html;
+        }
+
+        // 侧边统计列表渲染
+        const statListDom = document.getElementById('statList');
+        Object.entries(provinceCount).sort((a, b) => b[1] - a[1]).forEach(([p, num]) => {
+            const div = document.createElement('div');
+            div.className = 'stat-item';
+            div.innerHTML = `<span>${p}</span><span>${num}人</span>`;
+            statListDom.appendChild(div);
+        });
+
+        // 点击定位配置
+        const provinceCenter = {
+            "天津": [117.2, 39.13],
+            "北京": [116.4, 39.9],
+            "山东": [117, 36.67],
+            "湖北": [114.31, 30.59],
+            "辽宁": [123.43, 41.8],
+            "云南": [102.71, 25.04],
+            "吉林": [125.32, 43.82],
+            "江苏": [118.79, 32.06],
+            "安徽": [117.27, 31.86],
+            "上海": [121.47, 31.23],
+            "浙江": [120.65, 28.01],
+            "河北": [115.48, 38.87],
+            "陕西": [108.08, 34.28]
+        };
+
+        const studentListDom = document.getElementById('studentList');
+        classmateList.forEach(stu => {
+            const div = document.createElement('div');
+            div.className = 'student-item';
+            div.textContent = `${stu.name} | ${stu.school}`;
+            div.onclick = () => {
+                myChart.dispatchAction({
+                    type: 'geoZoom',
+                    center: provinceCenter[stu.province],
+                    zoom: 2.2
+                });
+            };
+            studentListDom.appendChild(div);
+        });
+
+        const option = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: '#fff',
+                borderColor: '#AF8C4A',
+                borderWidth: 1,
+                padding: 10,
+                textStyle: {
+                    color: '#AF8C4A',
+                    fontSize: 12,
+                    lineHeight: 1.5
+                },
+                extraCssText: 'max-width:280px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);',
+                formatter: fullTooltip
+            },
+            visualMap: {
+                show: false,
+                min: 0,
+                max: 1,
+                inRange: { color: ['#3C406D'] }
+            },
+            geo: {
+                map: 'china',
+                roam: true,
+                zoom: 1.2,
+                scaleLimit: { min: 0.7, max: 4 },
+                layoutCenter: ["50%", "52%"],
+                layoutSize: "90%",
+                itemStyle: {
+                    areaColor: '#3C406D',
+                    borderColor: '#AF8C4A',
+                    borderWidth: 1
+                },
+                emphasis: {
+                    itemStyle: {
+                        areaColor: '#08A4CC',
+                        borderColor: '#AF8C4A'
+                    }
+                },
+                label: { show: false }
+            },
+            series: [
+                {
+                    type: 'map',
+                    geoIndex: 0,
+                    data: dataList
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+        window.addEventListener('resize', () => myChart.resize());
+    </script>
+</body>
+</html>
